@@ -74,7 +74,7 @@ Main outputs land under `results/`:
 
 ## Notes
 
-- The paper used DALI and a PHYLIP distance-tree method. This repository uses `GTalign` for structural comparison, as requested.
+- The paper used DALI and a PHYLIP distance-tree method. This repository uses `GTalign` for structural comparison, as it more modern, faster and better tool.
 - The SDM implementation follows the Lakshmi et al. formula, but approximates PFTE from GTalign's aligned-residue count and the smaller structure length.
 - `IQ-TREE 3` is used for the sequence phylogeny. The structure phylogeny is inferred from the SDM distance matrix with a neighbor-joining distance-tree method.
 - By default, if a structure has multiple chains, the pipeline uses the longest protein chain.

@@ -39,8 +39,8 @@ def test_build_sdm_script_writes_zero_diagonal(tmp_path, monkeypatch):
     ).to_csv(manifest_path, sep="\t", index=False)
     pd.DataFrame(
         [
-            {"query": "A", "reference": "B", "aligned_residues": 95, "rmsd": 1.2},
-            {"query": "B", "reference": "A", "aligned_residues": 95, "rmsd": 1.2},
+            {"query": "A", "reference": "B", "topologically_equivalent_residues": 90, "aligned_residues": 95, "rmsd": 1.2},
+            {"query": "B", "reference": "A", "topologically_equivalent_residues": 90, "aligned_residues": 95, "rmsd": 1.2},
         ]
     ).to_csv(pairwise_path, sep="\t", index=False)
 

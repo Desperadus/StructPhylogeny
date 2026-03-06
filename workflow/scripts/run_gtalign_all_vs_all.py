@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -64,6 +65,10 @@ def _first_present(mapping: dict, keys: list[str], default=None):
     return default
 
 
+def _contains_any(mapping: dict, keys: list[str]) -> bool:
+    return any(key in mapping for key in keys)
+
+
 def parse_gtalign_json(path: Path) -> list[dict]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if "gtalign_search" in payload:
@@ -76,11 +81,14 @@ def parse_gtalign_json(path: Path) -> list[dict]:
             hit = record.get("hit_record", {})
             alignment = hit.get("alignment", {})
             reference_name = Path(str(_first_present(hit, ["reference_description"], ""))).stem or None
+            fallback_used = not _contains_any(alignment, ["n_matched"])
             rows.append(
                 {
                     "query": query_name,
                     "reference": reference_name,
+                    "topologically_equivalent_residues": int(_first_present(alignment, ["n_matched", "n_aligned"], 0)),
                     "aligned_residues": int(_first_present(alignment, ["n_aligned", "n_matched"], 0)),
+                    "pfte_fallback_used": fallback_used,
                     "rmsd": float(_first_present(alignment, ["rmsd"], 0.0)),
                     "tm_score_query": float(_first_present(alignment, ["tmscore_query"], 0.0)),
                     "tm_score_reference": float(_first_present(alignment, ["tmscore_refn"], 0.0)),
@@ -98,11 +106,14 @@ def parse_gtalign_json(path: Path) -> list[dict]:
         )
         query_length = _first_present(query_entry, ["query_length", "query_len"])
         for hit in query_entry.get("hits", []):
+            fallback_used = not _contains_any(hit, ["topologically_equivalent_residues", "n_matched"])
             rows.append(
                 {
                     "query": Path(str(query_name)).stem if query_name else None,
                     "reference": Path(str(_first_present(hit, ["hit_name", "reference_name", "reference", "description"]))).stem,
-                    "aligned_residues": int(_first_present(hit, ["aligned_residues", "aligned_positions", "aligned_length"], 0)),
+                    "topologically_equivalent_residues": int(_first_present(hit, ["topologically_equivalent_residues", "n_matched", "aligned_residues", "aligned_positions", "aligned_length"], 0)),
+                    "aligned_residues": int(_first_present(hit, ["aligned_residues", "aligned_positions", "aligned_length", "n_matched"], 0)),
+                    "pfte_fallback_used": fallback_used,
                     "rmsd": float(_first_present(hit, ["RMSD", "rmsd"], 0.0)),
                     "tm_score_query": float(_first_present(hit, ["TM_score_query_normalized", "tm_score_query", "TM2"], 0.0)),
                     "tm_score_reference": float(_first_present(hit, ["TM_score_ref_normalized", "tm_score_reference", "TM1"], 0.0)),
@@ -160,6 +171,18 @@ def main() -> None:
         .drop(columns=["pair_key"])
         .sort_values(["query", "reference"])
     )
+
+    fallback_rows = df[df["pfte_fallback_used"]]
+    if not fallback_rows.empty:
+        preview = ", ".join(
+            f"{row.query} vs {row.reference}" for row in fallback_rows[["query", "reference"]].head(10).itertuples(index=False)
+        )
+        warnings.warn(
+            "GTalign output did not include `n_matched`/`topologically_equivalent_residues` for "
+            f"{len(fallback_rows)} pair(s); PFTE will fall back to aligned_residues. "
+            f"First affected pairs: {preview}",
+            stacklevel=2,
+        )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.output, sep="\t", index=False)

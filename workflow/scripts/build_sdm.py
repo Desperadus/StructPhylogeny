@@ -35,11 +35,15 @@ def main() -> None:
         reference = row["reference"]
         if query == reference:
             continue
+        topologically_equivalent_residues = row.get("topologically_equivalent_residues")
         score = compute_sdm(
-            aligned_residues=int(row["aligned_residues"]),
             query_length=int(lengths[query]),
             reference_length=int(lengths[reference]),
             rmsd=float(row["rmsd"]),
+            topologically_equivalent_residues=(
+                int(topologically_equivalent_residues) if pd.notna(topologically_equivalent_residues) else None
+            ),
+            aligned_residues=int(row["aligned_residues"]),
             rmsd_cap=float(config["structure"]["srms_rmsd_cap"]),
             min_score=float(config["structure"]["min_score"]),
         )

@@ -1,0 +1,18 @@
+name: structphylogeny
+channels:
+  - conda-forge
+  - bioconda
+  - minmarg
+dependencies:
+  - python=3.11
+  - snakemake
+  - biopython
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - seaborn
+  - pytest
+  - mafft
+  - iqtree
+  - gtalign_gpu

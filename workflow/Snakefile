@@ -1,0 +1,231 @@
+configfile: "config/config.yaml"
+
+from pathlib import Path
+
+RESULTS = Path(config["results_dir"])
+
+MANIFEST = RESULTS / "manifest" / "structures.tsv"
+SEQUENCES = RESULTS / "sequences" / "proteins.fasta"
+ALIGNMENT = RESULTS / "sequences" / "proteins.aligned.fasta"
+SEQUENCE_TREE_PREFIX = RESULTS / "trees" / "sequence"
+SEQUENCE_TREE = Path(f"{SEQUENCE_TREE_PREFIX}.treefile")
+SEQUENCE_LOG = Path(f"{SEQUENCE_TREE_PREFIX}.log")
+SEQUENCE_REPORT = Path(f"{SEQUENCE_TREE_PREFIX}.iqtree")
+
+PAIRWISE = RESULTS / "structure" / "gtalign_pairwise.tsv"
+SDM = RESULTS / "structure" / "sdm.tsv"
+SDM_PHYLIP = RESULTS / "structure" / "sdm.phy"
+STRUCTURE_TREE = RESULTS / "trees" / "structure_sdm.nwk"
+SEQUENCE_DISTANCE = RESULTS / "sequences" / "sequence_distances.tsv"
+MATRIX_CORRELATION = RESULTS / "reports" / "matrix_correlation.tsv"
+SDM_HEATMAP = RESULTS / "reports" / "sdm_heatmap.png"
+SEQ_HEATMAP = RESULTS / "reports" / "sequence_distance_heatmap.png"
+REPORT = RESULTS / "reports" / "report.md"
+
+
+rule all:
+    input:
+        MANIFEST,
+        SEQUENCES,
+        ALIGNMENT,
+        SEQUENCE_TREE,
+        SEQUENCE_LOG,
+        SEQUENCE_REPORT,
+        PAIRWISE,
+        SDM,
+        SDM_PHYLIP,
+        STRUCTURE_TREE,
+        SEQUENCE_DISTANCE,
+        MATRIX_CORRELATION,
+        SDM_HEATMAP,
+        SEQ_HEATMAP,
+        REPORT,
+
+
+rule structures:
+    input:
+        MANIFEST
+
+
+rule structure_alignment:
+    input:
+        MANIFEST,
+        PAIRWISE
+
+
+rule structure_matrix:
+    input:
+        MANIFEST,
+        PAIRWISE,
+        SDM,
+        SDM_PHYLIP
+
+
+rule structure_tree_target:
+    input:
+        STRUCTURE_TREE
+
+
+rule sequences:
+    input:
+        SEQUENCES
+
+
+rule sequence_alignment:
+    input:
+        SEQUENCES,
+        ALIGNMENT
+
+
+rule sequence_matrix:
+    input:
+        ALIGNMENT,
+        SEQUENCE_DISTANCE
+
+
+rule sequence_tree_target:
+    input:
+        SEQUENCE_TREE,
+        SEQUENCE_LOG,
+        SEQUENCE_REPORT
+
+
+rule trees:
+    input:
+        SEQUENCE_TREE,
+        SEQUENCE_LOG,
+        SEQUENCE_REPORT,
+        STRUCTURE_TREE
+
+
+rule reports:
+    input:
+        MATRIX_CORRELATION,
+        SDM_HEATMAP,
+        SEQ_HEATMAP,
+        REPORT
+
+
+rule structure_manifest:
+    input:
+        config["structures_dir"]
+    output:
+        MANIFEST
+    shell:
+        "python workflow/scripts/make_manifest.py --structures-dir {input} --output {output}"
+
+
+rule extract_sequences:
+    input:
+        config["structures_dir"]
+    output:
+        SEQUENCES
+    shell:
+        "python workflow/scripts/extract_sequences.py --structures-dir {input} --output {output}"
+
+
+rule align_sequences:
+    input:
+        SEQUENCES
+    output:
+        ALIGNMENT
+    params:
+        mafft_bin=config["sequence"]["mafft_bin"],
+        mafft_args=" ".join(config["sequence"]["mafft_args"])
+    shell:
+        "{params.mafft_bin} {params.mafft_args} {input} > {output}"
+
+
+rule sequence_tree:
+    input:
+        ALIGNMENT
+    output:
+        SEQUENCE_TREE,
+        SEQUENCE_LOG,
+        SEQUENCE_REPORT,
+    params:
+        prefix=str(SEQUENCE_TREE_PREFIX),
+        iqtree_bin=config["sequence"]["iqtree_bin"],
+        iqtree_args=" ".join(config["sequence"]["iqtree_args"])
+    shell:
+        "{params.iqtree_bin} -s {input} --prefix {params.prefix} {params.iqtree_args}"
+
+
+rule gtalign_all_vs_all:
+    input:
+        manifest=MANIFEST
+    output:
+        PAIRWISE
+    shell:
+        "python workflow/scripts/run_gtalign_all_vs_all.py --config config/config.yaml --manifest {input.manifest} --output {output}"
+
+
+rule compute_sdm:
+    input:
+        pairwise=PAIRWISE,
+        manifest=MANIFEST
+    output:
+        matrix=SDM,
+        phylip=SDM_PHYLIP
+    shell:
+        "python workflow/scripts/build_sdm.py --config config/config.yaml --pairwise {input.pairwise} --manifest {input.manifest} --matrix-output {output.matrix} --phylip-output {output.phylip}"
+
+
+rule build_structure_tree:
+    input:
+        SDM
+    output:
+        STRUCTURE_TREE
+    shell:
+        "python workflow/scripts/build_structure_tree.py --matrix {input} --output {output}"
+
+
+rule sequence_distances:
+    input:
+        ALIGNMENT
+    output:
+        SEQUENCE_DISTANCE
+    shell:
+        "python workflow/scripts/build_sequence_distance_matrix.py --alignment {input} --output {output}"
+
+
+rule compare_matrices:
+    input:
+        structure=SDM,
+        sequence=SEQUENCE_DISTANCE
+    output:
+        MATRIX_CORRELATION
+    shell:
+        "python workflow/scripts/compare_matrices.py --structure-matrix {input.structure} --sequence-matrix {input.sequence} --output {output}"
+
+
+rule sdm_heatmap:
+    input:
+        SDM
+    output:
+        SDM_HEATMAP
+    shell:
+        "python workflow/scripts/render_heatmap.py --matrix {input} --output {output} --title 'Structural dissimilarity matrix'"
+
+
+rule seq_heatmap:
+    input:
+        SEQUENCE_DISTANCE
+    output:
+        SEQ_HEATMAP
+    shell:
+        "python workflow/scripts/render_heatmap.py --matrix {input} --output {output} --title 'Sequence p-distance matrix'"
+
+
+rule report:
+    input:
+        manifest=MANIFEST,
+        sequence_tree=SEQUENCE_TREE,
+        structure_tree=STRUCTURE_TREE,
+        correlation=MATRIX_CORRELATION,
+        sdm=SDM,
+        seqdist=SEQUENCE_DISTANCE
+    output:
+        REPORT
+    shell:
+        "python workflow/scripts/render_report.py --manifest {input.manifest} --sequence-tree {input.sequence_tree} --structure-tree {input.structure_tree} --correlation {input.correlation} --sdm {input.sdm} --sequence-distance {input.seqdist} --output {output}"

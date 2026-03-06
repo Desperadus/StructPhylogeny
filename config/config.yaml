@@ -1,0 +1,35 @@
+structures_dir: data/mouse_lipocalin_structures
+results_dir: results
+
+sequence:
+  mafft_bin: mafft
+  iqtree_bin: iqtree
+  mafft_args:
+    - --auto
+    - --thread
+    - "-1"
+  iqtree_args:
+    - --seqtype
+    - AA
+    - -m
+    - MFP
+    - -B
+    - "1000"
+    - -T
+    - AUTO
+    - --redo
+
+structure:
+  gtalign_bin: gtalign
+  gtalign_args:
+    - --outfmt=1
+    - -s
+    - "0"
+    - --pre-score=0
+    - --nhits=100000
+    - --speed=13
+  srms_rmsd_cap: 3.0
+  min_score: 1.0e-6
+
+report:
+  heatmap_cmap: viridis

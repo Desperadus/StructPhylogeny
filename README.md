@@ -2,7 +2,7 @@
 
 `StructPhylogeny` is a Snakemake pipeline for building parallel structure-based and sequence-based phylogenies from a folder of protein structures.
 
-It is designed around the workflow direction of Lakshmi et al. (2015) in [`paper/`](./paper), but implemented with modern tooling:
+It is designed around the workflow direction of Lakshmi et al. (2015), but implemented with modern tooling:
 
 - `GTalign` for all-vs-all 3D structural alignment and comparison
 - an SDM-like structural dissimilarity matrix computed from pairwise alignments
@@ -76,7 +76,7 @@ Main outputs land under `results/`:
 
 - The paper used DALI and a PHYLIP distance-tree method. This repository uses `GTalign` for structural comparison, as requested.
 - The SDM implementation follows the Lakshmi et al. formula, but approximates PFTE from GTalign's aligned-residue count and the smaller structure length.
-- `IQ-TREE 3` is used for the sequence phylogeny. The structure phylogeny is inferred from the SDM distance matrix with a neighbor-joining distance-tree method because SDM is distance data rather than an alignment.
+- `IQ-TREE 3` is used for the sequence phylogeny. The structure phylogeny is inferred from the SDM distance matrix with a neighbor-joining distance-tree method.
 - By default, if a structure has multiple chains, the pipeline uses the longest protein chain.
 
 ## Tests

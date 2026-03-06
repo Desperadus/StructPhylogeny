@@ -19,18 +19,11 @@ spec.loader.exec_module(module)
 
 
 def test_build_sdm_script_writes_zero_diagonal(tmp_path, monkeypatch):
-    config_path = tmp_path / "config.yaml"
     pairwise_path = tmp_path / "pairwise.tsv"
     manifest_path = tmp_path / "manifest.tsv"
     matrix_output = tmp_path / "sdm.tsv"
     phylip_output = tmp_path / "sdm.phy"
 
-    config_path.write_text(
-        "structure:\n"
-        "  srms_rmsd_cap: 3.0\n"
-        "  min_score: 1.0e-6\n",
-        encoding="utf-8",
-    )
     pd.DataFrame(
         [
             {"sample": "A", "residue_count": 100},
@@ -49,8 +42,6 @@ def test_build_sdm_script_writes_zero_diagonal(tmp_path, monkeypatch):
         "argv",
         [
             "build_sdm.py",
-            "--config",
-            str(config_path),
             "--pairwise",
             str(pairwise_path),
             "--manifest",
@@ -59,6 +50,10 @@ def test_build_sdm_script_writes_zero_diagonal(tmp_path, monkeypatch):
             str(matrix_output),
             "--phylip-output",
             str(phylip_output),
+            "--rmsd-cap",
+            "3.0",
+            "--min-score",
+            "1.0e-6",
         ],
     )
 

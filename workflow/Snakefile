@@ -167,8 +167,11 @@ rule compute_sdm:
     output:
         matrix=SDM,
         phylip=SDM_PHYLIP
+    params:
+        rmsd_cap=config["structure"]["srms_rmsd_cap"],
+        min_score=config["structure"]["min_score"]
     shell:
-        "python workflow/scripts/build_sdm.py --config config/config.yaml --pairwise {input.pairwise} --manifest {input.manifest} --matrix-output {output.matrix} --phylip-output {output.phylip}"
+        "python workflow/scripts/build_sdm.py --pairwise {input.pairwise} --manifest {input.manifest} --matrix-output {output.matrix} --phylip-output {output.phylip} --rmsd-cap {params.rmsd_cap} --min-score {params.min_score}"
 
 
 rule build_structure_tree:

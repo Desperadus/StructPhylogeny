@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yaml
 
 import common  # noqa: F401
 from structphylogeny.matrices import write_phylip_distance_matrix, write_square_matrix
@@ -14,14 +13,14 @@ from structphylogeny.sdm import compute_sdm
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--pairwise", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--matrix-output", type=Path, required=True)
     parser.add_argument("--phylip-output", type=Path, required=True)
+    parser.add_argument("--rmsd-cap", type=float, required=True)
+    parser.add_argument("--min-score", type=float, required=True)
     args = parser.parse_args()
 
-    config = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     pairwise = pd.read_csv(args.pairwise, sep="\t")
     manifest = pd.read_csv(args.manifest, sep="\t")
     lengths = manifest.set_index("sample")["residue_count"].to_dict()
@@ -44,8 +43,8 @@ def main() -> None:
                 int(topologically_equivalent_residues) if pd.notna(topologically_equivalent_residues) else None
             ),
             aligned_residues=int(row["aligned_residues"]),
-            rmsd_cap=float(config["structure"]["srms_rmsd_cap"]),
-            min_score=float(config["structure"]["min_score"]),
+            rmsd_cap=args.rmsd_cap,
+            min_score=args.min_score,
         )
         matrix.loc[query, reference] = score
         matrix.loc[reference, query] = score

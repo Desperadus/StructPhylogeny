@@ -215,3 +215,4 @@ __marimo__/
 *.pdb
 *.mmcif
 paper
+results_*

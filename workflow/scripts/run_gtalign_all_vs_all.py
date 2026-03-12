@@ -160,6 +160,11 @@ def main() -> None:
     df = pd.DataFrame(rows)
     samples = set(manifest["sample"].tolist())
     df = df[df["query"].isin(samples) & df["reference"].isin(samples)].copy()
+    if df.empty:
+        raise RuntimeError(
+            "GTalign produced results, but none matched the manifest sample names after filtering. "
+            "This usually means the workflow ran GTalign on a different structures directory than the manifest."
+        )
     df["pair_key"] = df.apply(lambda row: tuple(sorted((row["query"], row["reference"]))), axis=1)
     # Keep the best-scoring observation for each unordered pair.
     df = (

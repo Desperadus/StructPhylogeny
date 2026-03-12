@@ -2,6 +2,11 @@ configfile: "config/config.yaml"
 
 from pathlib import Path
 
+ACTIVE_CONFIGFILE = (
+    Path(workflow.overwrite_configfiles[-1])
+    if getattr(workflow, "overwrite_configfiles", None)
+    else Path("config/config.yaml")
+)
 RESULTS = Path(config["results_dir"])
 
 MANIFEST = RESULTS / "manifest" / "structures.tsv"
@@ -156,8 +161,10 @@ rule gtalign_all_vs_all:
         manifest=MANIFEST
     output:
         PAIRWISE
+    params:
+        configfile=str(ACTIVE_CONFIGFILE)
     shell:
-        "python workflow/scripts/run_gtalign_all_vs_all.py --config config/config.yaml --manifest {input.manifest} --output {output}"
+        "python workflow/scripts/run_gtalign_all_vs_all.py --config {params.configfile} --manifest {input.manifest} --output {output}"
 
 
 rule compute_sdm:

@@ -12,6 +12,10 @@ It is designed around the workflow direction of Lakshmi et al. (2015), but imple
 - `IQ-TREE 3` for maximum-likelihood sequence phylogeny
 - summary QC, distance-matrix comparison, and heatmap/report outputs
 
+# Disclaimer
+- This package requires **CUDA** - it would be possible to run this without cuda but a different installation of GTalign would be needed - modify the mamba env based on the GTalign repository docs to use the CPU version
+- This package was used and developed as part of my diploma thesis; no official publication regarding this exists as of now. If needed, cite the tools used here, such as GTalign, MAFFT, IQTREE3, etc.
+
 ## Environment
 
 The repository includes a `mamba` environment specification in [`environment.yml`](./environment.yml).

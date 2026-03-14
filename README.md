@@ -47,7 +47,8 @@ The default configuration is in [`config/config.yaml`](./config/config.yaml).
 Run the full pipeline with:
 
 ```bash
-snakemake --cores 8
+snakemake --cores 8 # For example data
+snakemake --cores 8 --configfile path/to/your/config.yaml # For your defined folder of proteins and flags for MAFFT or IQTREE
 ```
 
 Or dry-run it first:
